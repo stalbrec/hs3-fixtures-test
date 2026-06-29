@@ -19,7 +19,7 @@ jobs:
           token: ${{ github.token }}
 
       - name: Install Python dependencies
-        run: pip install jsonschema
+        run: apt update && apt install -y python-jsonschema
 
       - name: Regenerate expected JSON, metadata, and manifest
         run: python tools/build_manifest_and_expected.py
