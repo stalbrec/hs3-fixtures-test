@@ -30,10 +30,16 @@ jobs:
             ${{ github.event.pull_request.head.sha }} \
             -- 'fixtures/*/hs3.json')
 
+            echo 'found new hs3.json files:'
+            echo ${hs3_files[@]}
+
             mapfile -t metadata_files < <(git diff --diff-filter d --name-only \
             ${{ github.event.pull_request.base.sha }} \
             ${{ github.event.pull_request.head.sha }} \
             -- 'fixtures/*/metadata.json')
+
+            echo 'found new metadata.json files:'
+            echo ${hs3_files[@]}
 
             dirs_from_hs3=$(printf '%s\n' "${hs3_files[@]}" | xargs -n1 dirname | sort -u)
             dirs_from_metadata=$(printf '%s\n' "${metadata_files[@]}" | xargs -n1 dirname | sort -u)
@@ -53,6 +59,10 @@ jobs:
               exit 1
             fi
             matrix=$(printf '%s\n' "${dirs_from_hs3[@]}" | xargs -n1 -I % jq  -c --arg dir "%" '{dir:$dir,  image: .reference_backend}' "%/metadata.json" | jq -sc .)
+
+            echo "determined jobs matrix to be:"
+            echo $matrix | jq 
+
             echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
   generate:
     needs: determine-jobs
