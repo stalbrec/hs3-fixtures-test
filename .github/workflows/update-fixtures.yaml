@@ -24,6 +24,7 @@ jobs:
           git fetch upstream "${{ github.event.pull_request.base.sha}}"
 
       - name: read-metadata
+        id: read-metadata
         run: |
             mapfile -t hs3_files < <(git diff --diff-filter d --name-only \
             ${{ github.event.pull_request.base.sha }} \
@@ -66,7 +67,8 @@ jobs:
             echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
   generate:
     needs: determine-jobs
-    if: needs.determine-jobs.outputs.matrix != '[]'
+    if: (needs.determine-jobs.result == 'success') && 
+        (needs.determine-jobs.outputs.matrix != '[]')
     strategy:
       fail-fast: false
       matrix: 
