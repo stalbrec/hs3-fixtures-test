@@ -1,34 +1,92 @@
-name: Update Fixtures
+name: Generate Fixtures
 on:
   pull_request:
     types: [opened, labeled]
 
 jobs:
-  regenerate:
+  determine-jobs:
     if: |
-      (github.event.action == 'labeled' && github.event.label.name == 'update fixtures') ||
-      (github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'update fixtures'))
-    runs-on: ubuntu-latest
-    container:
-      image: registry.cern.ch/root-ci/ubuntu2410:buildready
+      (github.event.action == 'labeled' && github.event.label.name == 'generate fixtures') ||
+      (github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'generate fixtures'))
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.read-metadata.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4      
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name}}
+          token: ${{ github.token }}
+          fetch-depth: 0
+      - name: fetch base commit
+        run: |
+          git remote add upstream "https://github.com${{ github.repository }}.git"
+          git fetch upstream "${{ github.event.pull_request.base.sha}}"
+
+      - name: read-metadata
+        run: |
+            mapfile -t hs3_files < <(git diff --name-only \
+            ${{ github.event.pull_request.base.sha }} \
+            ${{ github.event.pull_request.head.sha }} \
+            -- 'fixtures/*/hs3.json')
+
+            mapfile -t metadata_files < <(git diff --name-only \
+            ${{ github.event.pull_request.base.sha }} \
+            ${{ github.event.pull_request.head.sha }} \
+            -- 'fixtures/*/metadata.json')
+
+            dirs_from_hs3=$(printf '%s\n' "${hs3_files[@]}" | xargs -n1 dirname | sort -u)
+            dirs_from_metadata=$(printf '%s\n' "${metadata_files[@]}" | xargs -n1 dirname | sort -u)
+
+            missing_metadata=$(comm -23 <(echo "$dirs_from_hs3" | sort) <(echo "$dirs_from_metadata" | sort))
+            extra_metadata=$(comm -13 <(echo "$dirs_from_hs3" | sort) <(echo "$dirs_from_metadata" | sort))
+
+            if [ -n "${missing_metadata}" ]; then
+              echo "ERROR: Testcase(s) with hs3.json but without metadata.json:"
+              echo ${missing_metadata}
+              exit 1
+            fi
+            
+            if [ -n "${extra_metadata}" ]; then
+              echo "ERROR: Testcase(s) with metadata.json but without hs3.json:"
+              echo ${extra_metadata}
+              exit 1
+            fi
+            matrix=$(printf '%s\n' "${dirs_from_hs3[@]}" | xargs -n1 -I % jq  -c --arg dir "%" '{dir:$dir,  image: .reference_backend}' "%/metadata.json" | jq -sc .)
+            echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+  generate:
+    if: |
+      (github.event.action == 'labeled' && github.event.label.name == 'generate fixtures') ||
+      (github.event.action == 'opened' && contains(github.event.pull_request.labels.*.name, 'generate fixtures'))
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.determine-jobs.outputs.matrix) }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           token: ${{ github.token }}
+          fetch-depth: 0
 
-      - name: Regenerate expected JSON, metadata, and manifest
-        run: python tools/build_manifest_and_expected.py
-
-      - name: Commit and push changes
+      - name: Find fixtures changed in this PR
+        id: fixtures
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add fixtures/ manifest.json
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-          else
-            git commit -m "Regenerate fixtures and manifest"
-            git push
-          fi
+          set -euo pipefail
+          echo "Generating fixtures for ${{ matrix.dir }} using the reference backend image ${{ matrix.image }}"
+
+      # - name: Commit and push changes
+      #   if: steps.fixtures.outputs.dirs != ''
+      #   run: |
+      #     git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add fixtures/ manifest.json
+      #     if git diff --cached --quiet; then
+      #       echo "No changes to commit."
+      #     else
+      #       git commit -m "Regenerate fixtures and manifest"
+      #       git push
+      #     fi
