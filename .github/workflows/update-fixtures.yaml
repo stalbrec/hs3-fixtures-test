@@ -43,7 +43,7 @@ jobs:
 
             if [ -n "${missing_metadata}" ]; then
               echo "ERROR: Testcase(s) with hs3.json but without metadata.json:"
-              echo "${missing_metadata}""
+              echo "${missing_metadata}"
               exit 1
             fi
             
