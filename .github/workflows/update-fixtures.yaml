@@ -1,7 +1,7 @@
 name: Generate Fixtures
 on:
   pull_request:
-    types: [opened, labeled]
+    types: [labeled]
 
 jobs:
   determine-jobs:
@@ -67,13 +67,18 @@ jobs:
             echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
   generate:
     needs: determine-jobs
-    if: (needs.determine-jobs.result == 'success') && 
+    if: (needs.determine-jobs.result == 'success') &&
         (needs.determine-jobs.outputs.matrix != '[]')
     strategy:
       fail-fast: false
-      matrix: 
+      max-parallel: 1
+      matrix:
         include: ${{ fromJSON(needs.determine-jobs.outputs.matrix) }}
     runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.image }}
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,22 +87,24 @@ jobs:
           token: ${{ github.token }}
           fetch-depth: 0
 
-      - name: Find fixtures changed in this PR
-        id: fixtures
+      - name: Generate fixtures
+        id: generate-fixtures
         run: |
           set -euo pipefail
           echo "Generating fixtures for ${{ matrix.dir }} using the reference backend image ${{ matrix.image }}"
+          python3 /workspace/tools/build_manifest_and_expected.py -e -f /workspace/${{ matrix.dir }}
 
-      # - name: Commit and push changes
-      #   if: steps.fixtures.outputs.dirs != ''
-      #   run: |
-      #     git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      #     git config user.name "github-actions[bot]"
-      #     git config user.email "github-actions[bot]@users.noreply.github.com"
-      #     git add fixtures/ manifest.json
-      #     if git diff --cached --quiet; then
-      #       echo "No changes to commit."
-      #     else
-      #       git commit -m "Regenerate fixtures and manifest"
-      #       git push
-      #     fi
+      - name: Commit and push generated fixtures
+        working-directory: /workspace
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory /workspace
+          git config user.name "hs3bot"
+          git config user.email "hs3.services@cern.ch"
+          git add "${{ matrix.dir }}" manifest.json
+          if git diff --cached --quiet; then
+            echo "Nothing to commit for ${{ matrix.dir }}"
+            exit 0
+          fi
+          git commit -m "Generate fixtures for ${{ matrix.dir }}"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
