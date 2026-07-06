@@ -89,6 +89,7 @@ jobs:
 
       - name: Generate fixtures
         id: generate-fixtures
+        shell: bash
         run: |
           set -euo pipefail
           echo "Generating fixtures for ${{ matrix.dir }} using the reference backend image ${{ matrix.image }}"
@@ -96,6 +97,7 @@ jobs:
 
       - name: Commit and push generated fixtures
         working-directory: /workspace
+        shell: bash
         run: |
           set -euo pipefail
           git config --global --add safe.directory /workspace
