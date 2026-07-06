@@ -93,6 +93,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "Generating fixtures for ${{ matrix.dir }} using the reference backend image ${{ matrix.image }}"
+          ## TODO: this is highly WIP / a prototype which only works for roofit backend
+          source /usr/share/root/bin/thisroot.sh
           python3 "$GITHUB_WORKSPACE/tools/build_manifest_and_expected.py" -e -f "$GITHUB_WORKSPACE/${{ matrix.dir }}"
 
       - name: Commit and push generated fixtures
