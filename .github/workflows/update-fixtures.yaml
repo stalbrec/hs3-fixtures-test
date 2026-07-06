@@ -93,14 +93,14 @@ jobs:
         run: |
           set -euo pipefail
           echo "Generating fixtures for ${{ matrix.dir }} using the reference backend image ${{ matrix.image }}"
-          python3 /workspace/tools/build_manifest_and_expected.py -e -f /workspace/${{ matrix.dir }}
+          python3 "${{ github.workspace }}/tools/build_manifest_and_expected.py" -e -f "${{ github.workspace }}/${{ matrix.dir }}"
 
       - name: Commit and push generated fixtures
-        working-directory: /workspace
+        working-directory: ${{ github.workspace }}
         shell: bash
         run: |
           set -euo pipefail
-          git config --global --add safe.directory /workspace
+          git config --global --add safe.directory "${{ github.workspace }}"
           git config user.name "hs3bot"
           git config user.email "hs3.services@cern.ch"
           git add "${{ matrix.dir }}" manifest.json
