@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "id": "static_integrity",
+      "kind": "static_integrity"
+    },
+    {
+      "id": "structure_import",
+      "kind": "structure_import",
+      "target": {
+        "data": [
+          "McfData",
+          "MfData"
+        ],
+        "functions": [
+          "psif"
+        ],
+        "pdfs": [
+          "Mcf",
+          "Mf",
+          "Rpsi",
+          "Tpsi"
+        ]
+      }
+    }
+  ],
+  "schema_version": 1,
+  "test_id": "super_test_case1"
+}

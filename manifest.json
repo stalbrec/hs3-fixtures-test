@@ -781,6 +781,38 @@
       "path": "fixtures/super_test_case",
       "tags": [],
       "test_id": "super_test_case"
+    },
+    {
+      "checks": [
+        "static_integrity",
+        "structure_import"
+      ],
+      "conformance": [],
+      "features": {
+        "sections": [
+          "data",
+          "distributions",
+          "domains",
+          "functions",
+          "parameter_points"
+        ],
+        "semantic": [],
+        "types": [
+          "fft_conv_pdf",
+          "gaussian_dist",
+          "generic_dist",
+          "generic_function",
+          "product_domain",
+          "unbinned"
+        ]
+      },
+      "hashes": {
+        "canonical_sha256": "dbd101e0fc0d031dd6804744952727138a836687eaad427a098f0174cfe87df0",
+        "sha256": "0fcf97c597b1cece9a20ee2042767c99637f83d15c2d416fab58ba2331b398e6"
+      },
+      "path": "fixtures/super_test_case1",
+      "tags": [],
+      "test_id": "super_test_case1"
     }
   ],
   "generated_by": "tools/build_manifest_and_expected.py",
