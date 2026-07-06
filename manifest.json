@@ -749,6 +749,40 @@
         "roofit_tutorial"
       ],
       "test_id": "rf703_effpdfprod"
+    },
+    {
+      "checks": [
+        "static_integrity",
+        "structure_import"
+      ],
+      "conformance": [
+        "HS3-Core"
+      ],
+      "features": {
+        "sections": [
+          "data",
+          "distributions",
+          "domains",
+          "parameter_points"
+        ],
+        "semantic": [],
+        "types": [
+          "gaussian_dist",
+          "mixture_dist",
+          "polynomial_dist",
+          "product_domain",
+          "unbinned"
+        ]
+      },
+      "hashes": {
+        "canonical_sha256": "fcee32411760a04fd97f14e201f1d7a411cf49ccba43dfaad1bbbcb66714365b",
+        "sha256": "fcee32411760a04fd97f14e201f1d7a411cf49ccba43dfaad1bbbcb66714365b"
+      },
+      "path": "fixtures/gaussian_plus_polymix",
+      "tags": [
+        "roofit_tutorial"
+      ],
+      "test_id": "gaussian_plus_polymix"
     }
   ],
   "generated_by": "tools/build_manifest_and_expected.py",
